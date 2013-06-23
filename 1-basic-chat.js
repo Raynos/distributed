@@ -5,7 +5,7 @@ var EventEmitter = require('events').EventEmitter
 
 // port needed for connection
 var seedPort = argv.port || 2503
-var myIp = require('my-local-ip')()
+var myIp = require('my-local-ip')() || "localhost"
 var seedHost = argv.host || myIp
 var serverPort = argv.server || 2503
 
