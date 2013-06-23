@@ -5,8 +5,10 @@ var EventEmitter = require("events").EventEmitter
 
 // port needed for connection
 var port = argv.port || 2503
+var myIp = require("my-local-ip")()
 // id needed for per client identity
-var id = require("my-local-ip")() + ":" + port
+var id = id + ":" + port
+var host = argv.host || myIp
 
 // name purely for pretty-ness
 var name = argv.name || "Anonymous"
@@ -61,7 +63,7 @@ if (argv.server) {
     server.listen(port)
     console.log("Started server on port", port)
 } else {
-    var client = net.connect(port)
+    var client = net.connect(port, host)
 
     client.pipe(messages.createStream()).pipe(client)
     console.log("Connected to server on port", port)
