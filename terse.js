@@ -37,7 +37,7 @@ function Chat(id, name) {
                 history.forEach(function (e) {
                     if (!seen(message.clock, e)) stream.queue(e)
                 })
-            } else if (message.text) {
+            } else if (!seen(clock, message)) {
                 chat.emit('message', message, stream)
             }
         })
@@ -52,9 +52,9 @@ function Chat(id, name) {
     }
 
     chat.on('message', function (message) {
-        if (!seen(clock, message)) {
-            clock[message.id] = message.time
+        clock[message.id] = message.time
 
+        if (message.text) {
             chat.history.push(message)
             console.log(message.name + ' > ' + message.text)
         }
