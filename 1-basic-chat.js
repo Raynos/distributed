@@ -7,8 +7,10 @@ var EventEmitter = require('events').EventEmitter
 var port = argv.port || 2503
 var myIp = require('my-local-ip')()
 var host = argv.host || myIp
+var serverPort = argv.server || 2503
+
 // id needed for per client identity
-var id = myIp + ':' + port
+var id = myIp + ':' + serverPort
 
 // name purely for pretty-ness
 var name = argv.name || 'Anonymous'
@@ -99,30 +101,50 @@ process.stdin.on('data', function (text) {
     chat.send(String(text))
 })
 
-if (argv.server) {
+//if (argv.server) {
     var server = net.createServer(function (stream) {
         stream.pipe(chat.createStream()).pipe(stream)
     })
 
-    server.listen(port)
+    server.listen(argv.server || 2503)
     console.log('Started server on port', port)
-} else {
+//} else {
     // connection logic in function for retries
-    (function connect () {
-        console.log('Attempt connection to:', host+':'+port)
-        var client = net.connect(port, host, function () {
+    ;(function connect () {
+        var hosts = Object.keys(chat.clock).map(function (e) {
+          var p = e.split(':')
+          return {host: p[0], port: p[1]}
+        }).filter(function (e) {
+          return serverPort != e.port || myIp != e.host
+        })
+
+        var random = hosts[~~(Math.random() * hosts.length)] 
+            || {host: host, port: port}
+
+        console.log('Attempt connection to:', random, chat.clock)
+
+        if(random.host == myIp && random.port == serverPort) {
+           console.log('do not connect to self')
+           return reconnect()
+        }        
+
+        var client = net.connect(random.port, random.host, function () {
             client.pipe(chat.createStream()).pipe(client)
             console.log('Connected to server on port', port)
+            setTimeout(function() {
+              client.end()
+            }, 5000)
         })
 
         // retry on end or error
-        client.once('error', reconnect)
-        client.once('end', reconnect)
+        client.on('error', reconnect)
+        client.on('close', reconnect)
 
         function reconnect () {
+            if(client) client.removeAllListeners()
             setTimeout(function () {
                 connect()
             }, 1000)
         }
     })()
-}
+//}
