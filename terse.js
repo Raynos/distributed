@@ -36,8 +36,8 @@ function Chat(id, name) {
                 history.forEach(function (e) {
                     if (!seen(message.clock, e)) stream.queue(e)
                 })
-            } else {
-                chat.receive(message, stream)
+            } else if (message.text) {
+                chat.emit('message', message, stream)
             }
         })
 
@@ -50,18 +50,12 @@ function Chat(id, name) {
         return stream
     }
 
-    chat.receive = function (message, source) {
-        chat.emit('message', message, source)
-    }
-
     chat.on('message', function (message) {
         if (!seen(clock, message)) {
             clock[message.id] = message.time
 
             chat.history.push(message)
-            if (message.text) {
-                console.log(message.name + ' > ' + message.text)
-            }
+            console.log(message.name + ' > ' + message.text)
         }
     })
 
@@ -73,12 +67,9 @@ process.stdin.on('data', function (text) {
     chat.send(String(text))
 })
 
-var server = net.createServer(function (stream) {
+net.createServer(function (stream) {
     stream.pipe(chat.createStream()).pipe(stream)
-})
-
-server.listen(serverPort)
-console.log('Started server on port', serverPort)
+}).listen(serverPort)
 
 function randomPeer(clock, defaults) {
     var hosts = Object.keys(clock).map(function (peer) {
@@ -94,19 +85,13 @@ function randomPeer(clock, defaults) {
 ;(function connect () {
     var peer = randomPeer(chat.clock, { host: seedHost, port: seedPort })
 
-    console.log('Attempt connection to:', peer)
-
     if (peer.host === myIp && peer.port === serverPort) {
-        console.log('do not connect to self')
         return setTimeout(connect, 1000)
     }
 
-    var client = net.connect(random.port, random.host, function () {
+    var client = net.connect(peer.port, peer.host, function () {
         client.pipe(chat.createStream()).pipe(client)
-        console.log('Connected to server on port', random.port)
-        setTimeout(function() {
-            client.end()
-        }, 5000)
+        setTimeout(client.end.bind(client), 5000)
     })
 
     client.on('error', reconnect)
