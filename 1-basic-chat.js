@@ -6,8 +6,8 @@ var EventEmitter = require('events').EventEmitter
 // port needed for connection
 var port = argv.port || 2503
 var myIp = require('my-local-ip')()
-// id needed for per client identity
 var host = argv.host || myIp
+// id needed for per client identity
 var id = myIp + ':' + port
 
 // name purely for pretty-ness
@@ -17,6 +17,7 @@ function Chat(id, name) {
     // Each node needs a messages thing
     var chat = new EventEmitter()
 
+    // keep track of history
     var history = chat.history = []
 
     // We should be able to send messages locally
@@ -38,25 +39,29 @@ function Chat(id, name) {
     // receive
     chat.createStream = function () {
         var stream = MessageStream(function (message) {
-            if(message.since !== null) {
+            // Handle history messages
+            if (typeof message.since === "number") {
                 console.log(message.id + ' requests messages since:', message.since)
                 history.forEach(function (e) {
                     if(e.time > message.since) {
                         stream.queue(e)
                     }
                 })
+            // otherwise receive the message
             } else {
                 chat.receive(message, stream)
             }
         })
 
+        // on message send down stream
         chat.on('message', function (message, source) {
             if (source !== stream) {
                 stream.queue(message)
             }
         })
 
-        stream.queue({since: chat.latest(), id: id})
+        // send the history receival handshake
+        stream.queue({ since: chat.latest(), id: id })
 
         return stream
     }
@@ -66,7 +71,7 @@ function Chat(id, name) {
         chat.emit('message', message, source)
     }
 
-    // print each message
+    // on message store in history & print
     chat.on('message', function (message) {
         chat.history.push(message)
         console.log(message.name + ' > ' + message.text)
@@ -95,6 +100,7 @@ if (argv.server) {
     server.listen(port)
     console.log('Started server on port', port)
 } else {
+    // connection logic in function for retries
     (function connect () {
         console.log('Attempt connection to:', host+':'+port)
         var client = net.connect(port, host, function () {
@@ -102,6 +108,7 @@ if (argv.server) {
             console.log('Connected to server on port', port)
         })
 
+        // retry on end or error
         client.once('error', reconnect)
         client.once('end', reconnect)
 
