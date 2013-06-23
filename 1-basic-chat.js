@@ -4,7 +4,9 @@ var argv = require("optimist").argv
 var EventEmitter = require("events").EventEmitter
 
 var port = argv.port || 2503
-var id = require("my-local-ip")() + ":" + port
+var myIp = require("my-local-ip")()
+var id = id + ":" + port
+var host = argv.host || myIp
 
 var name = argv.name || "Anonymous"
 
@@ -53,7 +55,7 @@ if (argv.server) {
     server.listen(port)
     console.log("Started server on port", port)
 } else {
-    var client = net.connect(port)
+    var client = net.connect(port, host)
 
     client.pipe(messages.createStream()).pipe(client)
     console.log("Connected to server on port", port)
