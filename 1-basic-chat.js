@@ -19,6 +19,7 @@ function Chat(id, name) {
 
     // keep track of history
     var history = chat.history = []
+    var clock = chat.clock = {}
 
     // We should be able to send messages locally
     chat.send = function (text) {
@@ -73,8 +74,12 @@ function Chat(id, name) {
 
     // on message store in history & print
     chat.on('message', function (message) {
-        chat.history.push(message)
-        console.log(message.name + ' > ' + message.text)
+        if (clock[message.id] == null || clock[message.id] < message.time) {
+            clock[message.id] = message.time
+
+            chat.history.push(message)
+            console.log(message.name + ' > ' + message.text)
+        }
     })
 
     //get the lastest message we know.
