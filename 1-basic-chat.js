@@ -4,9 +4,9 @@ var argv = require('optimist').argv
 var EventEmitter = require('events').EventEmitter
 
 // port needed for connection
-var port = argv.port || 2503
+var seedPort = argv.port || 2503
 var myIp = require('my-local-ip')()
-var host = argv.host || myIp
+var seedHost = argv.host || myIp
 var serverPort = argv.server || 2503
 
 // id needed for per client identity
@@ -18,6 +18,7 @@ var name = argv.name || 'Anonymous'
 function Chat(id, name) {
     // Each node needs a messages thing
     var chat = new EventEmitter()
+    chat.setMaxListeners(Infinity)
 
     // keep track of history
     var history = chat.history = []
@@ -106,8 +107,8 @@ process.stdin.on('data', function (text) {
         stream.pipe(chat.createStream()).pipe(stream)
     })
 
-    server.listen(argv.server || 2503)
-    console.log('Started server on port', port)
+    server.listen(serverPort)
+    console.log('Started server on port', serverPort)
 //} else {
     // connection logic in function for retries
     ;(function connect () {
@@ -118,19 +119,19 @@ process.stdin.on('data', function (text) {
           return serverPort != e.port || myIp != e.host
         })
 
-        var random = hosts[~~(Math.random() * hosts.length)] 
-            || {host: host, port: port}
+        var random = hosts[~~(Math.random() * hosts.length)]
+            || {host: seedHost, port: seedPort}
 
-        console.log('Attempt connection to:', random, chat.clock)
+        console.log('Attempt connection to:', random)
 
         if(random.host == myIp && random.port == serverPort) {
            console.log('do not connect to self')
            return reconnect()
-        }        
+        }
 
         var client = net.connect(random.port, random.host, function () {
             client.pipe(chat.createStream()).pipe(client)
-            console.log('Connected to server on port', port)
+            console.log('Connected to server on port', random.port)
             setTimeout(function() {
               client.end()
             }, 5000)
