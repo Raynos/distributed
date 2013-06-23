@@ -49,7 +49,6 @@ function Chat(id, name) {
         var stream = MessageStream(function (message) {
             // Handle history messages
             if (message.clock) {
-                console.log(message.id + ' requests messages since:', message.since)
                 history.forEach(function (e) {
                     if(!seen(message.clock, e)) {
                         stream.queue(e)
