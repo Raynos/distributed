@@ -7,21 +7,30 @@
   "repository": "git://github.com/Raynos/distributed.git",
   "main": "index",
   "homepage": "https://github.com/Raynos/distributed",
-  "contributors": [{
-    "name": "Raynos"
-  }],
+  "contributors": [
+    {
+      "name": "Raynos"
+    }
+  ],
   "bugs": {
     "url": "https://github.com/Raynos/distributed/issues",
     "email": "raynos2@gmail.com"
   },
-  "dependencies": {},
+  "dependencies": {
+    "message-stream": "~1.0.0",
+    "optimist": "~0.5.2",
+    "stream-serializer": "~1.1.1",
+    "my-local-ip": "~1.0.0"
+  },
   "devDependencies": {
     "tape": "~1.0.2"
   },
-  "licenses": [{
-    "type": "MIT",
-    "url": "http://github.com/Raynos/distributed/raw/master/LICENSE"
-  }],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/Raynos/distributed/raw/master/LICENSE"
+    }
+  ],
   "scripts": {
     "test": "node ./test/index.js",
     "start": "node ./index.js",
