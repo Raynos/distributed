@@ -7,8 +7,6 @@ var seedPort = argv.port || 2503
 var myIp = require('my-local-ip')() || 'localhost'
 var seedHost = argv.host || myIp
 var serverPort = argv.server || 2503
-var id = myIp + ':' + serverPort
-var name = argv.name || 'Anonymous'
 
 function Chat(id, name) {
     var chat = new EventEmitter()
@@ -63,7 +61,7 @@ function Chat(id, name) {
     return chat
 }
 
-var chat = Chat(id, name)
+var chat = Chat(myIp + ':' + serverPort, argv.name || 'Anonymous')
 process.stdin.on('data', function (text) {
     chat.send(String(text))
 })
