@@ -33,6 +33,7 @@ function Chat(id, name) {
     chat.createStream = function () {
         var stream = MessageStream(function (message) {
             if (message.clock) {
+                clock[message.id] = clock[message.id] || 0
                 history.forEach(function (e) {
                     if (!seen(message.clock, e)) stream.queue(e)
                 })
@@ -85,7 +86,7 @@ function randomPeer(clock, defaults) {
 ;(function connect () {
     var peer = randomPeer(chat.clock, { host: seedHost, port: seedPort })
 
-    if (peer.host === myIp && peer.port === serverPort) {
+    if (peer.host == myIp && peer.port == serverPort) {
         return setTimeout(connect, 1000)
     }
 
