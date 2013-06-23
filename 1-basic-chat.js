@@ -3,13 +3,19 @@ var net = require("net")
 var argv = require("optimist").argv
 var EventEmitter = require("events").EventEmitter
 
+// port needed for connection
 var port = argv.port || 2503
+// id needed for per client identity
 var id = require("my-local-ip")() + ":" + port
 
+// name purely for pretty-ness
 var name = argv.name || "Anonymous"
 
 function Messages() {
+    // Each node needs a messages thing
     var messages = new EventEmitter()
+
+    // We should be able to send messages locally
     messages.send = function (text) {
         messages.emit("message", {
             text: text,
@@ -18,6 +24,8 @@ function Messages() {
             time: Date.now()
         })
     }
+
+    // we should be able to receive messages from a network
     messages.receive = function (message, source) {
         console.log(message.name + " > " + message.text)
 
