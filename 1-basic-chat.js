@@ -13,13 +13,15 @@ var host = argv.host || myIp
 // name purely for pretty-ness
 var name = argv.name || "Anonymous"
 
-function Messages() {
+function Chat() {
     // Each node needs a messages thing
-    var messages = new EventEmitter()
+    var chat = new EventEmitter()
+
+    chat.history = []
 
     // We should be able to send messages locally
-    messages.send = function (text) {
-        messages.emit("message", {
+    chat.send = function (text) {
+        chat.emit("message", {
             text: text,
             name: name,
             id: id,
@@ -34,12 +36,12 @@ function Messages() {
     // unless we emitted it ourselves to avoid an infinite loop
     // This means we should always pass along the stream to
     // receive
-    messages.createStream = function () {
+    chat.createStream = function () {
         var stream = MessageStream(function (message) {
             messages.receive(message, stream)
         })
 
-        messages.on("message", function (message, source) {
+        chat.on("message", function (message, source) {
             if (source !== stream) {
                 stream.queue(message)
             }
@@ -49,26 +51,29 @@ function Messages() {
     }
 
     // we should be able to receive messages from a network
-    messages.receive = function (message, source) {
+    chat.receive = function (message, source) {
         messages.emit("message", message, source)
     }
 
     // print each message
-    messages.on("message", function (message) {
+    chat.on("message", function (message) {
+        chat.history.push(message)
         console.log(message.name + " > " + message.text)
     })
 
-    return messages
+    //get the lastest message we know.
+
+    return chat
 }
 
-var messages = Messages()
+var chat = Chat()
 process.stdin.on("data", function (text) {
-    messages.send(String(text))
+    chat.send(String(text))
 })
 
 if (argv.server) {
     var server = net.createServer(function (stream) {
-        stream.pipe(messages.createStream()).pipe(stream)
+        stream.pipe(chat.createStream()).pipe(stream)
     })
 
     server.listen(port)
@@ -77,7 +82,7 @@ if (argv.server) {
     (function connect () {
         console.log('Attempt connection to:', host+':'+port)
         var client = net.connect(port, host, function () {
-            client.pipe(messages.createStream()).pipe(client)
+            client.pipe(chat.createStream()).pipe(client)
             console.log("Connected to server on port", port)
         })
 
