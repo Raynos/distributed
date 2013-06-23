@@ -1,17 +1,17 @@
-var MessageStream = require("message-stream")
-var net = require("net")
-var argv = require("optimist").argv
-var EventEmitter = require("events").EventEmitter
+var MessageStream = require('message-stream')
+var net = require('net')
+var argv = require('optimist').argv
+var EventEmitter = require('events').EventEmitter
 
 // port needed for connection
 var port = argv.port || 2503
-var myIp = require("my-local-ip")()
+var myIp = require('my-local-ip')()
 // id needed for per client identity
 var host = argv.host || myIp
-var id = myIp + ":" + port
+var id = myIp + ':' + port
 
 // name purely for pretty-ness
-var name = argv.name || "Anonymous"
+var name = argv.name || 'Anonymous'
 
 function Chat(id, name) {
     // Each node needs a messages thing
@@ -21,7 +21,7 @@ function Chat(id, name) {
 
     // We should be able to send messages locally
     chat.send = function (text) {
-        chat.emit("message", {
+        chat.emit('message', {
             text: text,
             name: name,
             id: id,
@@ -38,18 +38,19 @@ function Chat(id, name) {
     // receive
     chat.createStream = function () {
         var stream = MessageStream(function (message) {
-            if(message.since != null) {
-              console.log(message.id + ' requests messages since:', message.since)
-              history.forEach(function (e) {
-                if(e.time > message.since)
-                  stream.queue(e)
-              })
+            if(message.since !== null) {
+                console.log(message.id + ' requests messages since:', message.since)
+                history.forEach(function (e) {
+                    if(e.time > message.since) {
+                        stream.queue(e)
+                    }
+                })
+            } else {
+                chat.receive(message, stream)
             }
-            else
-              chat.receive(message, stream)
         })
 
-        chat.on("message", function (message, source) {
+        chat.on('message', function (message, source) {
             if (source !== stream) {
                 stream.queue(message)
             }
@@ -62,27 +63,27 @@ function Chat(id, name) {
 
     // we should be able to receive messages from a network
     chat.receive = function (message, source) {
-        chat.emit("message", message, source)
+        chat.emit('message', message, source)
     }
 
     // print each message
-    chat.on("message", function (message) {
+    chat.on('message', function (message) {
         chat.history.push(message)
-        console.log(message.name + " > " + message.text)
+        console.log(message.name + ' > ' + message.text)
     })
 
     //get the lastest message we know.
     chat.latest = function () {
-      return history.reduce(function (max, e) {
-        return max.time > e.time ? max : e
-      }, {time: 0}).time
+        return history.reduce(function (max, e) {
+            return max.time > e.time ? max : e
+        }, {time: 0}).time
     }
 
     return chat
 }
 
 var chat = Chat(id, name)
-process.stdin.on("data", function (text) {
+process.stdin.on('data', function (text) {
     chat.send(String(text))
 })
 
@@ -92,22 +93,22 @@ if (argv.server) {
     })
 
     server.listen(port)
-    console.log("Started server on port", port)
+    console.log('Started server on port', port)
 } else {
     (function connect () {
         console.log('Attempt connection to:', host+':'+port)
         var client = net.connect(port, host, function () {
             client.pipe(chat.createStream()).pipe(client)
-            console.log("Connected to server on port", port)
+            console.log('Connected to server on port', port)
         })
 
         client.once('error', reconnect)
-        client.once('end', reconnect) 
+        client.once('end', reconnect)
 
         function reconnect () {
-          setTimeout(function () {
-            connect()
-          }, 1000)
+            setTimeout(function () {
+                connect()
+            }, 1000)
         }
     })()
 }
