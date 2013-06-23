@@ -34,6 +34,10 @@ function Chat(id, name) {
         })
     }
 
+    function seen (clock, message) {
+      return clock[message.id] && clock[message.id] >= message.time
+    }
+
     // Create a stream for sending and receiving messages
     // When we receieve a message from the stream we should
     // call .receive
@@ -44,10 +48,10 @@ function Chat(id, name) {
     chat.createStream = function () {
         var stream = MessageStream(function (message) {
             // Handle history messages
-            if (typeof message.since === "number") {
+            if (message.clock) {
                 console.log(message.id + ' requests messages since:', message.since)
                 history.forEach(function (e) {
-                    if(e.time > message.since) {
+                    if(!seen(message.clock, e)) {
                         stream.queue(e)
                     }
                 })
@@ -65,7 +69,7 @@ function Chat(id, name) {
         })
 
         // send the history receival handshake
-        stream.queue({ since: chat.latest(), id: id })
+        stream.queue({ clock: chat.clock, id: id })
 
         return stream
     }
@@ -78,7 +82,7 @@ function Chat(id, name) {
     // on message store in history & print
     chat.on('message', function (message) {
         // check to see whether message already handled
-        if (clock[message.id] == null || clock[message.id] < message.time) {
+        if (!seen(clock, message)) {
             // update clock
             clock[message.id] = message.time
 
