@@ -63,8 +63,20 @@ if (argv.server) {
     server.listen(port)
     console.log("Started server on port", port)
 } else {
-    var client = net.connect(port, host)
+    (function connect () {
+        console.log('Attempt connection to:', host+':'+port)
+        var client = net.connect(port, host, function () {
+            client.pipe(messages.createStream()).pipe(client)
+            console.log("Connected to server on port", port)
+        })
 
-    client.pipe(messages.createStream()).pipe(client)
-    console.log("Connected to server on port", port)
+        client.once('error', reconnect)
+        client.once('end', reconnect) 
+
+        function reconnect () {
+          setTimeout(function () {
+            connect()
+          }, 1000)
+        }
+    })()
 }
