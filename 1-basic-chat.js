@@ -27,12 +27,13 @@ function Messages() {
         })
     }
 
-    // we should be able to receive messages from a network
-    messages.receive = function (message, source) {
-        console.log(message.name + " > " + message.text)
-
-        messages.emit("message", message, source)
-    }
+    // Create a stream for sending and receiving messages
+    // When we receieve a message from the stream we should
+    // call .receive
+    // When we have a message emmitted we should queue it
+    // unless we emitted it ourselves to avoid an infinite loop
+    // This means we should always pass along the stream to
+    // receive
     messages.createStream = function () {
         var stream = MessageStream(function (message) {
             messages.receive(message, stream)
@@ -46,6 +47,16 @@ function Messages() {
 
         return stream
     }
+
+    // we should be able to receive messages from a network
+    messages.receive = function (message, source) {
+        messages.emit("message", message, source)
+    }
+
+    // print each message
+    messages.on("message", function (message) {
+        console.log(message.name + " > " + message.text)
+    })
 
     return messages
 }
