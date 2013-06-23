@@ -74,7 +74,9 @@ function Chat(id, name) {
 
     // on message store in history & print
     chat.on('message', function (message) {
+        // check to see whether message already handled
         if (clock[message.id] == null || clock[message.id] < message.time) {
+            // update clock
             clock[message.id] = message.time
 
             chat.history.push(message)
