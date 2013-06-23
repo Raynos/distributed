@@ -67,4 +67,8 @@ if (argv.server) {
 
     client.pipe(messages.createStream()).pipe(client)
     console.log("Connected to server on port", port)
+
+    client.on("end", function () {
+        console.log("Disconnected!")
+    })
 }
