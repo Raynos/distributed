@@ -7,17 +7,17 @@ var EventEmitter = require("events").EventEmitter
 var port = argv.port || 2503
 var myIp = require("my-local-ip")()
 // id needed for per client identity
-var id = id + ":" + port
 var host = argv.host || myIp
+var id = myIp + ":" + port
 
 // name purely for pretty-ness
 var name = argv.name || "Anonymous"
 
-function Chat() {
+function Chat(id, name) {
     // Each node needs a messages thing
     var chat = new EventEmitter()
 
-    chat.history = []
+    var history = chat.history = []
 
     // We should be able to send messages locally
     chat.send = function (text) {
@@ -38,7 +38,15 @@ function Chat() {
     // receive
     chat.createStream = function () {
         var stream = MessageStream(function (message) {
-            messages.receive(message, stream)
+            if(message.since != null) {
+              console.log(message.id + ' requests messages since:', message.since)
+              history.forEach(function (e) {
+                if(e.time > message.since)
+                  stream.queue(e)
+              })
+            }
+            else
+              chat.receive(message, stream)
         })
 
         chat.on("message", function (message, source) {
@@ -47,12 +55,14 @@ function Chat() {
             }
         })
 
+        stream.queue({since: chat.latest(), id: id})
+
         return stream
     }
 
     // we should be able to receive messages from a network
     chat.receive = function (message, source) {
-        messages.emit("message", message, source)
+        chat.emit("message", message, source)
     }
 
     // print each message
@@ -62,11 +72,16 @@ function Chat() {
     })
 
     //get the lastest message we know.
+    chat.latest = function () {
+      return history.reduce(function (max, e) {
+        return max.time > e.time ? max : e
+      }, {time: 0}).time
+    }
 
     return chat
 }
 
-var chat = Chat()
+var chat = Chat(id, name)
 process.stdin.on("data", function (text) {
     chat.send(String(text))
 })
