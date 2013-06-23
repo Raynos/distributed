@@ -5,7 +5,7 @@ var EventEmitter = require('events').EventEmitter
 
 // port needed for connection
 var seedPort = argv.port || 2503
-var myIp = require('my-local-ip')() || "localhost"
+var myIp = require('my-local-ip')() || 'localhost'
 var seedHost = argv.host || myIp
 var serverPort = argv.server || 2503
 
@@ -34,8 +34,9 @@ function Chat(id, name) {
         })
     }
 
+    // Check whether or not we've seen this message before
     function seen (clock, message) {
-      return clock[message.id] && clock[message.id] >= message.time
+        return clock[message.id] && clock[message.id] >= message.time
     }
 
     // Create a stream for sending and receiving messages
@@ -47,7 +48,7 @@ function Chat(id, name) {
     // receive
     chat.createStream = function () {
         var stream = MessageStream(function (message) {
-            // Handle history messages
+            // Handle history by clock handshake
             if (message.clock) {
                 history.forEach(function (e) {
                     if(!seen(message.clock, e)) {
@@ -105,50 +106,59 @@ process.stdin.on('data', function (text) {
     chat.send(String(text))
 })
 
-//if (argv.server) {
-    var server = net.createServer(function (stream) {
-        stream.pipe(chat.createStream()).pipe(stream)
+var server = net.createServer(function (stream) {
+    stream.pipe(chat.createStream()).pipe(stream)
+})
+
+server.listen(serverPort)
+console.log('Started server on port', serverPort)
+
+// connection logic in function for retries
+function connect () {
+    // Get all the hosts from the clock
+    var hosts = Object.keys(chat.clock).map(function (e) {
+        var p = e.split(':')
+        return { host: p[0], port: p[1] }
+    // remove ourself from the list of hosts
+    }).filter(function (e) {
+        return serverPort !== e.port || myIp !== e.host
     })
 
-    server.listen(serverPort)
-    console.log('Started server on port', serverPort)
-//} else {
-    // connection logic in function for retries
-    ;(function connect () {
-        var hosts = Object.keys(chat.clock).map(function (e) {
-          var p = e.split(':')
-          return {host: p[0], port: p[1]}
-        }).filter(function (e) {
-          return serverPort != e.port || myIp != e.host
-        })
+    // pick one of the hosts or default to the seed host
+    var random = hosts[~~(Math.random() * hosts.length)] ||
+        { host: seedHost, port: seedPort }
 
-        var random = hosts[~~(Math.random() * hosts.length)]
-            || {host: seedHost, port: seedPort}
+    console.log('Attempt connection to:', random)
 
-        console.log('Attempt connection to:', random)
+    // if we are about to connect to ourself then abort
+    if (random.host === myIp && random.port === serverPort) {
+        console.log('do not connect to self')
+        return reconnect()
+    }
 
-        if(random.host == myIp && random.port == serverPort) {
-           console.log('do not connect to self')
-           return reconnect()
+    // connect to the host and kill the connection in 5 seconds
+    // This forces reconnecting to a random peer and creates
+    // a random network topology
+    var client = net.connect(random.port, random.host, function () {
+        client.pipe(chat.createStream()).pipe(client)
+        console.log('Connected to server on port', random.port)
+        setTimeout(function() {
+            client.end()
+        }, 5000)
+    })
+
+    // retry on end or error
+    client.on('error', reconnect)
+    client.on('close', reconnect)
+
+    function reconnect () {
+        if (client) {
+            client.removeAllListeners()
         }
+        setTimeout(function () {
+            connect()
+        }, 1000)
+    }
+}
 
-        var client = net.connect(random.port, random.host, function () {
-            client.pipe(chat.createStream()).pipe(client)
-            console.log('Connected to server on port', random.port)
-            setTimeout(function() {
-              client.end()
-            }, 5000)
-        })
-
-        // retry on end or error
-        client.on('error', reconnect)
-        client.on('close', reconnect)
-
-        function reconnect () {
-            if(client) client.removeAllListeners()
-            setTimeout(function () {
-                connect()
-            }, 1000)
-        }
-    })()
-//}
+connect()
