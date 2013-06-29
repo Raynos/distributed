@@ -43,14 +43,11 @@ function Chat(ipPort, name) {
         var stream = MessageStream(function (message) {
             // incoming messages
             // IMPLEMENT ME
-            chat.emit('message', message, stream)
         })
 
         chat.on('message', function (message, source) {
           // send messages like this
           // stream.send(message)
-          if(stream !== source)
-            stream.send(message)
         })
 
         return stream
