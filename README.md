@@ -1,25 +1,27 @@
 # Distributed
 
-Hello! You can find me at IP:port
+Connect to network "Distributed" with password "scuttlebutt"
 
-## Install deps
+Hello! You can find me at curl 10.0.1.30:8000
 
-To start you should install these deps.
+Run `curl 10.0.1.30:8000 | sh`
 
- - `npm install my-local-ip optimist message-stream stream-serializer --no-reg`
+to download the code!
 
-## The boilerplate
+## The chat application
 
-To make things easy we wrote a boilerplate for you.
+To make things easy we wrote the boring parts for you.
 
-Go grab it from IP:port/boilerplate
+Go grab it from chat.js
+
+This is where you write the code
 
 ## Ready set go!
 
 You've got the deps, you've got the code. You can run the code
 
 for client mode call me like
-`node chat.js --name=MY_NAME --port=8000 --host=10.0.1.30`
+`node chat.js --name=MY_NAME --port=9000 --host=10.0.1.30`
 
 for server mode call me like
 `node chat.js --name=MY_SERVER_NAME --server=MY_PORT`
