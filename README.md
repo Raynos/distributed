@@ -20,11 +20,11 @@ This is where you write the code
 
 You've got the deps, you've got the code. You can run the code
 
-for client mode call me like
-`node chat.js --name=MY_NAME --port=9000 --host=10.0.1.30`
+for central client mode call me like
+`node chat.js --name=MY_CLIENT_NAME --host=10.0.1.30`
 
-for server mode call me like
-`node chat.js --name=MY_SERVER_NAME --server=MY_PORT`
+for local client mode call me like
+`node chat.js --name=MY_LOCAL_NAME`
 
 You can talk to yourself in either client or server mode. If
     you run in client mode whatever host/port your trying to
